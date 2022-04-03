@@ -2,10 +2,11 @@
   "name": "proyectofinal",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "production/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon --inspect ./src/server.js"
+    "build": "webpack ./src/server.js -o production --mode='production'",
+    "start": "nodemon ."
   },
   "keywords": [],
   "author": "",
