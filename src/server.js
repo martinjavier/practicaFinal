@@ -1,8 +1,18 @@
+import { knex } from './db.js';
+
 const express = require('express');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+const articles = [
+    {nombre: 'Nombre1', codigo: 'Codigo1', precio: 123.45, stock: 100},
+    {nombre: 'Nombre2', codigo: 'Codigo2', precio: 223.45, stock: 200},
+    {nombre: 'Nombre3', codigo: 'Codigo3', precio: 323.45, stock: 300},
+    {nombre: 'Nombre4', codigo: 'Codigo4', precio: 423.45, stock: 400},
+    {nombre: 'Nombre5', codigo: 'Codigo5', precio: 523.45, stock: 500}
+]
 
 let carrito = 
 [
@@ -56,12 +66,92 @@ let productos =
     }
 ];
 
+
+async function batchProcess() {
+    // Drop Table
+    try {
+        const exist = await knex.schema.dropTableIfExists('productos');
+        console.log(exist);                  
+    } catch (error) {
+        console.log(error);
+    }
+    // Table Creation
+    try {
+        const exist = await knex.schema.hasTable('productos');
+        if (!exist) {
+            await knex.schema.createTable('productos', (table) => {
+                table.increments('id').primary().notNullable(),
+                table.varchar('timestap', 15).notNullable,
+                table.varchar('nombre', 10).notNullable,
+                table.string('descripcion', 30),
+                table.integer('codigo'),
+                table.string('foto', 40),
+                table.float('precio'),
+                table.integer('stock')
+            });
+            console.log('🔥 Tabla Productos creada 🔥');
+        } else {
+            console.log('La tabla Productos ya existe 🥺');
+        }
+    } catch (error) {
+        console.log(error);
+    }
+    // Insert Products
+    try {
+        const response = await knex.insert(productos).from('productos');
+        console.log('Productos Agregados 😁')
+        console.log(response);
+    } catch (error) {
+        console.log(error)
+    } 
+    /*
+    // Read Articles
+    try {
+        const users = await knex.select().from('articulos').orderBy('id','asc');
+        console.log(users);
+    } catch (error) {
+        console.log(error);
+    }
+    // Delete Article
+    try {
+        await knex.del().from('articulos').where('id',5);
+        console.log('Artículo borrado 😫');
+    } catch (error) {
+        console.log(error);
+    }
+    // Update Article
+    try {
+        await knex.from('articulos').update({stock: 0}).where('id',2);
+        console.log('Información Actualizada');
+    } catch (error) {
+        console.log(error);
+    } finally {
+        knex.destroy();
+    }
+    */
+}
+
+// Llamar al batch
+batchProcess();
+
 const routerProductos = express.Router();
+const routerCarrito = express.Router();
+
+// PRODUCTOS
 
 routerProductos.get('/', (req, res) => {
     res.status(200);
     res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(productos));
+    const misproductos = []
+    async function selectProducts() {
+        try{
+            misproductos = await knex.select().from('productos').orderBy('id','asc');
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    selectProducts();
+    res.send(JSON.stringify(misproductos));
 })
 
 routerProductos.get('/:id', (req, res) => {
@@ -78,7 +168,6 @@ routerProductos.post('/', (req, res) => {
     res.status(200).send('Producto agregado');
 })
 
-// Recibe y Actualiza un producto según su ID
 routerProductos.put('/:id', (req, res) => {
     const {id} = req.params;
     const {body} = req
@@ -102,9 +191,15 @@ routerProductos.delete('/:id', (req, res) => {
     res.status(200).send(`Producto ${id} eliminado`);
 })
 
-app.use('/api/productos', routerProductos);
+// CARRITO
 
-const routerCarrito = express.Router();
+routerCarrito.get('/:id', (req, res) => {
+    const {id} = req.params
+    let itemSearched = carrito[id-1];
+    res.status(200);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(itemSearched));
+})
 
 routerCarrito.post('/', (req, res) => {
     const {body} = req
@@ -122,13 +217,7 @@ routerCarrito.delete('/:id', (req, res) => {
     res.status(200).send(`Carrito ${id} eliminado`);
 })
 
-routerCarrito.get('/:id/productos', (req, res) => {
-    res.status(200);
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(carrito));
-})
-
-routerProductos.post('/:id/productos', (req, res) => {
+routerCarrito.post('/:id/productos', (req, res) => {
     const {id} = req.params;
     const {body} = req
     let itemSearched = productos[id];
@@ -151,8 +240,8 @@ routerCarrito.delete('/:id/productos/:id_prod', (req, res) => {
     res.status(200).send(`Carrito ${id} eliminado`);
 })
 
+app.use('/api/productos', routerProductos);
 app.use('/api/carrito', routerCarrito);
-
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => { console.log(`🔥 Server started on localhost on http://localhost:${PORT}`)});
