@@ -1,8 +1,9 @@
 import { knex } from './db.js';
 import express from "express";
+//import bodyParser from 'body-parser';
 
-//const express = require('express');
 const app = express();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -13,8 +14,6 @@ const routerProductos = express.Router();
 // PRODUCTOS
 
 routerProductos.get('/', (req, res) => {
-    res.status(200);
-    res.setHeader('Content-Type', 'application/json');
     let misproductos = [];
     async function selectProducts() {
         try{
@@ -35,7 +34,7 @@ routerProductos.get('/:id', (req, res) => {
     let itemSearched = [];
     async function selectProducts() {
         try{            
-            itemSearched = await knex.select().from('articulos').where('id',id);
+            itemSearched = await knex.select().from('productos').where('id',id);
             res.status(200);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(itemSearched));
@@ -47,10 +46,14 @@ routerProductos.get('/:id', (req, res) => {
 })
 
 routerProductos.post('/', (req, res) => {
-    const {body} = req
+    const {body} = req;
+    var mibody = JSON.stringify(body.nombre);
+    var params = req.params;
+    console.log("body = "+mibody+", Params = "+params);
+
     async function insertProduct() {
         try{
-            const response = await knex.insert(body).from('articulos');
+            const response = await knex.insert(body).from('productos');
             res.status(200);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
