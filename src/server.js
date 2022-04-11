@@ -9,7 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 const routerProductos = express.Router();
-// const routerCarrito = express.Router();
+const routerCarrito = express.Router();
 
 // PRODUCTOS
 
@@ -20,6 +20,7 @@ routerProductos.get('/', (req, res) => {
             misproductos = await knex.select().from('productos').orderBy('id','asc');
             res.status(200);
             res.setHeader('Content-Type', 'application/json');
+            console.log("GET /");
             res.send(JSON.stringify(misproductos));
         } catch (error) {
             console.log(error);
@@ -29,14 +30,16 @@ routerProductos.get('/', (req, res) => {
 })
 
 routerProductos.get('/:id', (req, res) => {
-    const {id} = req.params
-    console.log('Parámetro recibido: ',id);
+    const {id} = req.params.id;
+    console.log('Parámetro recibido: ',req.params);
+    console.log('Body recibido: ',req.body);
     let itemSearched = [];
     async function selectProducts() {
         try{            
             itemSearched = await knex.select().from('productos').where('id',id);
             res.status(200);
             res.setHeader('Content-Type', 'application/json');
+            console.log("GET WITH ID");
             res.send(JSON.stringify(itemSearched));
         } catch (error) {
             console.log(error);
@@ -47,10 +50,6 @@ routerProductos.get('/:id', (req, res) => {
 
 routerProductos.post('/', (req, res) => {
     const {body} = req;
-    var mibody = JSON.stringify(body.nombre);
-    var params = req.params;
-    console.log("body = "+mibody+", Params = "+params);
-
     async function insertProduct() {
         try{
             const response = await knex.insert(body).from('productos');
@@ -65,18 +64,13 @@ routerProductos.post('/', (req, res) => {
 })
 
 routerProductos.put('/:id', (req, res) => {
-    const {id} = req.params;
-    const {body} = req
+    const id = req.params.id;
+    const body = req.body;
+    console.log("ID: ", id);
+    console.log("BODY: ", body);
     async function updateProduct() {
         try{ 
-            /*           
-            const selectProducts = await knex.select().from('productos').orderBy('id','asc');
-            let content = selectProducts;
-            content = content.filter(x => {
-                return x.id != id;
-              })
-            */
-            const update = await knex.from('articulos').update(body).where('id',id);  
+            const update = await knex.from('productos').update(body).where('id',id);  
             res.status(200);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(update));
@@ -91,7 +85,7 @@ routerProductos.delete('/:id', (req, res) => {
     const {id} = req.params;
     async function deleteProduct() {
         try{ 
-            const deleted = await knex.del().from('articulos').where('id',id-1);
+            const deleted = await knex.del().from('productos').where('id',id-1);
             res.status(200);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(deleted));
@@ -102,61 +96,88 @@ routerProductos.delete('/:id', (req, res) => {
     deleteProduct(); 
 })
 
-/*
-
 // CARRITO
 
+routerCarrito.get('/', (req, res) => {
+    let micarrito = [];
+    async function selectCarrito(){
+    try {
+        micarrito = await knex.select().from('carrito').orderBy('id','asc');
+        res.status(200);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(micarrito));
+    } catch (error) {
+        console.log(error);
+    }
+    }
+    selectCarrito();
+})
+
 routerCarrito.get('/:id', (req, res) => {
-    const {id} = req.params
-    let itemSearched = carrito[id-1];
-    res.status(200);
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(itemSearched));
+    const {id} = req.params.id;
+    let itemSearched = [];
+    async function getCarrito(){
+    try {
+        itemSearched = await knex.select().from('carrito').where('id',id);
+        res.status(200);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(itemSearched));
+    } catch (error) {
+        console.log(error);
+    }
+    }
+    getCarrito();
 })
 
 routerCarrito.post('/', (req, res) => {
     const {body} = req
-    carrito.push(body);
-    res.status(200).send('Carrito creado');
+    async function insertCarrito() {
+        try{
+            const response = await knex.insert(body).from('carrito');
+            res.status(200).send('Carrito creado');
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(response));
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    insertCarrito();
 })
 
+// Borra carrito
 routerCarrito.delete('/:id', (req, res) => {
     const {id} = req.params;
-    let content = carrito;
-    content = content.filter(x => {
-        return x.id != id;
-      })
-    carrito = content;
-    res.status(200).send(`Carrito ${id} eliminado`);
+    async function deleteCarrito() {
+        try{ 
+            const deleted = await knex.del().from('carrito').where('id',id);
+            res.status(200).send(`Carrito ${id} eliminado`);
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(deleted));
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    deleteCarrito();
 })
 
-routerCarrito.post('/:id/productos', (req, res) => {
-    const {id} = req.params;
-    const {body} = req
-    let itemSearched = productos[id];
-    let content = productos;
-    content = content.filter(x => {
-        return x.id != id;
-      })
-    productos = content;
-    carrito.push(body);
-    res.status(200).send('Producto agregado al carrito');
-})
-
+// Borra un producto dentro del carrito
 routerCarrito.delete('/:id/productos/:id_prod', (req, res) => {
     const {id} = req.params;
-    let content = carrito;
-    content = content.filter(x => {
-        return x.id != id;
-      })
-    carrito = content;
-    res.status(200).send(`Carrito ${id} eliminado`);
+    async function deleteCarrito() {
+        try{ 
+            const deleted = await knex.del().from('carrito').where('id_prod',id);
+            res.status(200);
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify(deleted));
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    deleteCarrito();
 })
 
-*/
-
 app.use('/api/productos', routerProductos);
-// app.use('/api/carrito', routerCarrito);
+app.use('/api/carrito', routerCarrito);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => { console.log(`🔥 Server started on localhost on http://localhost:${PORT}`)});
