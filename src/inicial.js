@@ -1,41 +1,27 @@
 import { knex } from './db.js';
+import {faker} from '@faker-js/faker';
 
-let productos = 
-[
-    {
-        "id" : 1,
-        "timestamp": "10",
-        "nombre": "Escuadra",
-        "descripcion": "Escuadra de madera",
-        "codigo": "001",
-        "foto": "./escuadra.png",
-        "precio": 323.45,    
-        "stock": 100
-    },
-    {
-        "id" : 2,
-        "timestamp": "20",
-        "nombre": "Calculadora",
-        "descripcion": "Calculadora Casio",
-        "codigo": "002",
-        "foto": "./calculadora.png",
-        "precio": 234.56,    
-        "stock": 102
-    },
-    {
-        "id": 3,
-        "timestamp": "30",
-        "nombre": "Globo Terráqueo",
-        "descripcion": "Globo terráqueo de madera",
-        "codigo": "003",
-        "foto": "./globoterraqueo.png",
-        "precio": 45.67,    
-        "stock": 103
+let productos = [];
+
+for (let i = 1; i <= 6; i++) {
+    const product = {
+        id: i,
+        timestamp: 0,
+        nombre: faker.name.firstName(),
+        descripcion: "descripción "+i,
+        codigo: faker.random.numeric(5),
+        foto: faker.image.imageUrl(),
+        precio: faker.random.numeric(3),
+        stock: faker.random.numeric(3)
     }
-];
+    productos.push(product);        
+}
 
-let carrito = 
-[
+console.log(productos);
+
+let carrito = [];
+
+carrito = [
     {
         "id" : 1,
         "timestamp": Date.now(),
@@ -49,7 +35,8 @@ let carrito =
             "precio": 0.0,    
             "stock": 0
         }
-}];
+    }
+];      
 
 async function batchProductos() {
     // Drop Table
